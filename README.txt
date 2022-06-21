@@ -1,6 +1,7 @@
 # read the instruction for python and conda install at Install python and conda 
 # https://github.com/lpbsscientist/YeaZ-GUI
 
+# Get model.py, neural_network.py and segment.py from YeaZ Github and place them in the same folder 
 
 ###### create an environment with 
 # $ conda create --name BatchYeaZ python=3.6.8
