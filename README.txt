@@ -1,5 +1,6 @@
 # read the instruction for python and conda install at Install python and conda 
 # https://github.com/lpbsscientist/YeaZ-GUI
+# get the neural network parameters from https://drive.google.com/file/d/1NuZmhYU5eear51nDJ11-v_CttTIT_mBy/view?usp=sharing
 
 # Get model.py, neural_network.py and segment.py from YeaZ Github and place them in the same folder 
 
