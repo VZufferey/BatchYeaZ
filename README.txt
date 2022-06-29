@@ -13,7 +13,7 @@ $ conda create --name BatchYeaZ python=3.6.8
 # the  environement can be activated with: 
 $ conda activate BatchYeaZ
 # or
-$ activate batchYeaZ
+$ activate BatchYeaZ
 
 ###### and install packages in the activated environemnent with:
 $ pip install -r requirements.txt
@@ -29,5 +29,8 @@ TO EXECUTE THE SCRIPT
 
 1: activate the corresponding environment 
 $ conda activate BatchYeaz
+
 2: launch the script:
-$ python batchyeaz.py
+$ python BatchYeaZ.py
+
+at launch the following warning is displayed, and this is normal:
