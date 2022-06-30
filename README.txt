@@ -33,4 +33,5 @@ $ conda activate BatchYeaz
 2: launch the script:
 $ python BatchYeaZ.py
 
-at launch the following warning is displayed, and this is normal:
+At launch the following warning is displayed, and this is normal:
+I tensorflow/core/platform/cpu_feature_guard.cc:142] Your CPU supports instructions that this TensorFlow binary was not compiled to use: AVX2
