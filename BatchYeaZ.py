@@ -194,16 +194,17 @@ print("Loaded neural network: ", unet_weights)
 print("Bright-field slice # : ", z_BF)
 print("Bright-field channel #: ", ch_BF)
 
-# initialisations for 1. Java virtual machine and 2. image reader of the python-bioformats (python-bioformats 1.5.2)
+# initialisations for 1. Java virtual machine
 JB.start_vm(class_path=bioformats.JARS)
+
 # this code comes from https://forum.image.sc/t/python-bioformats-and-javabridge-debug-messages/12578/12, and is used to remove log message during execution
 myloglevel = "ERROR"  # user string argument for logLevel.
 rootLoggerName = JB.get_static_field("org/slf4j/Logger", "ROOT_LOGGER_NAME", "Ljava/lang/String;")
-rootLogger = JB.static_call("org/slf4j/LoggerFactory", "getLogger", "(Ljava/lang/String;)Lorg/slf4j/Logger;",
-                            rootLoggerName)
+rootLogger = JB.static_call("org/slf4j/LoggerFactory", "getLogger", "(Ljava/lang/String;)Lorg/slf4j/Logger;",rootLoggerName)
 logLevel = JB.get_static_field("ch/qos/logback/classic/Level", myloglevel, "Lch/qos/logback/classic/Level;")
 JB.call(rootLogger, "setLevel", "(Lch/qos/logback/classic/Level;)V", logLevel)
 
+#initialisation for the image reader from python-bioformats (python-bioformats 1.5.2), used to obtain metadata of images
 image_reader = bioformats.formatreader.make_image_reader_class()()  # https://downloads.openmicroscopy.org/bio-formats/5.1.5/api/loci/formats/ImageReader.html
 
 # initialisations for image displays
@@ -218,12 +219,11 @@ plt.ion()  # Interactive mode activation
 # Loop over files
 if len(files) > 0:
     for file in files:  # Loop through all files in folder
-        sequence = []
         print("\nChecking [" + file + "]")
         (filename, extension) = os.path.splitext(file)  # Split our original filename into name and extension
 
         # OPEN and CHECK that file is an image file. IF YES, THEN PROCESS
-        if extension == ".tif" or extension == ".nd2":
+        if extension == ".tif" : # or extension == ".nd2": # if file is an image
             try:  # Attempt to open an image file
                 print("[" + filename + "] is [" + extension + "] -> Reading with bioformats...\n")
                 # image reader definition, gathering & displaying hyperstack information
@@ -232,15 +232,15 @@ if len(files) > 0:
                 Hyperstack_NZ = image_reader.getSizeZ()
                 Hyperstack_NT = image_reader.getSizeT()
 
-                if isinstance(frame_end, int):
-                    if frame_end > Hyperstack_NT:
-                        frame_end = Hyperstack_NT
-                elif isinstance(frame_end, str):
-                    frame_end = int(Hyperstack_NT)
+                if isinstance(frame_end, int): # if last frame value is a number, ...
+                    if frame_end > Hyperstack_NT: # and if last frame value is bigger than the sequence length, ..
+                        frame_end = Hyperstack_NT # adjust to last frame number
+                elif isinstance(frame_end, str): # else, if last frame value is not a number,...
+                    frame_end = int(Hyperstack_NT) # then set to int with the last frame number.
 
                 print("N channels: ", Hyperstack_NC, " // N frames: ", Hyperstack_NT, " // N slices: ", Hyperstack_NZ)
                 print("Bright-field is expected on channel ", ch_BF)
-            except IOError as e:  # Report error if cannot open
+            except IOError as e:  # Report error if cannot open image
                 print("Problem opening", file, ":", e)
                 continue  # skip to the next file if error
         else:
@@ -283,7 +283,7 @@ if len(files) > 0:
             plt.pause(0.2)  # very important to leave some time for display to be effective
             print("Thresholding of Prediction image completed")
 
-            # SEGMENTATION MASK FROM THRESHOLDED PREDICTION :
+            # MAKE MASK SEQUENCE FROM THRESHOLDED PREDICTION :
             seg = segment(th_pred, pred, min_distance=10)
             subplot4.set_title("Watershed")
             subplot4.imshow(seg, cmap='gray')
@@ -294,7 +294,6 @@ if len(files) > 0:
             # print("asarray(seg).dtype", asarray(seg).dtype, "| numpy.amax(seg)", numpy.amax(seg))
 
             ## ---------END OF PROCESSING---------
-
             ## ---------Saving result images---------
 
             # 1. COMPOSITE: copy input images/hyperstack and ADD a new channel in a newly created hyperstack.
@@ -319,7 +318,7 @@ if len(files) > 0:
             #                        size_t=Hyperstack_NT)
             # print("   ...Successful") # still to solve: proper channel LUT (colors)
 
-            # 2. single sequence of mask
+            # 2. single sequence of mask images
             print("\nOutput1: Writing _maskSequence file (C=1, Z=1). Frame", t + 1, "of", Hyperstack_NT)
             bioformats.write_image(DirOut + "/" + filename + "_" + suffix + "_Th" + str(TH_modifier)+ "_T" + str(frame_start) + "-T" + str(frame_end) + ".tif",
                                    seg,
