@@ -34,7 +34,7 @@ from neural_network import *
 from segment import *
 # from hungarian import *
 
-
+################################################
 # FUNCTIONS
 def checkpath(directory, default):
     if os.path.exists(directory):
@@ -73,25 +73,25 @@ def checkInt(text):
     else:
         print("is not integer")
         return 0
+################################################
 
-# vVARIABLE DEFINITION--> IDEALLY THROUGH USE INPUT THROUGH A SIMPLE GUI
+# VARIABLE DEFINITION--> IDEALLY THROUGH USE INPUT THROUGH A SIMPLE GUI
 Dir = Dir0 = "/no folder"
-ch_BF = 0  # Default Bright-field channel index
-z_BF = 0  # default Z slice where Bright-field is present (starts at 0)
+ch_BF = 1  # Default Bright-field channel index
+z_BF = 1  # default Z slice where Bright-field is present (starts at 0)
 frame_start = 1
 frame_end = "last"
 suffix = "seg"
 TH_modifier = 1
-# unet_weights = filedialog.askopenfilename()    # Get neural network weights (IN COMMENT) and define default (for development) on the line below
+# unet_weights = filedialog.askopenfilename()    # (for development purpose) turn this line into comment and define default location with the line below
 # unet_weights = unet_weights_0 = r"C:\Users\vzuffer1\OneDrive - Université de Lausanne\PhD VZ (OneDrive)\0-MANIPS\0-IMAGING\0_python_scripts\Batch YeaZ segmenter\unet_weights_fission_BF_multilab_basic_SJR_0_1_batchsize_10_Nepochs_500.hdf5"
 
-
-# Working folder definition single pop up (leave as comment, FOR DEBUG)
+## Working folder definition single pop up (leave as comment, FOR DEBUG)
 # Dir = filedialog.askDirectory()                              # request for a folder to work in
 # if not len(Dir):                                             # check a Directory was entered
 #         print("No file selected. interrupting script")
 #         exit()
-# Working folder definition single pop up (leave as comment, FOR DEBUG)
+## Working folder definition single pop up (leave as comment, FOR DEBUG)
 
 ### PysimpleGUI ###
 GUI.theme('DarkBlue')
@@ -100,7 +100,7 @@ layout = [
               font="bold")],
     [GUI.FolderBrowse("Folder", key='Folder', enable_events=True)],
     [GUI.FileBrowse("Neural network parameters", key='NN', enable_events=True)],
-    [GUI.Text("\nSpecify Bright-field z-slice and channel number (starting from 0):", font="bold")],
+    [GUI.Text("\nSpecify Bright-field z-slice and channel number (starts with 1):", font="bold")],
     [GUI.Text("Channel"), GUI.Input(key="channel", default_text=ch_BF, size=[5, 3], enable_events=True),
      GUI.Text("slice"), GUI.Input(key="slice", default_text=z_BF, size=[5, 3], enable_events=True)],
     [GUI.Text("\nFrames to segment (starts with 1):", font="bold")],
@@ -208,11 +208,11 @@ JB.call(rootLogger, "setLevel", "(Lch/qos/logback/classic/Level;)V", logLevel)
 image_reader = bioformats.formatreader.make_image_reader_class()()  # https://downloads.openmicroscopy.org/bio-formats/5.1.5/api/loci/formats/ImageReader.html
 
 # initialisations for image displays
-fig = plt.figure(1, figsize=(16, 4))  # figure definition (1x4 layout)
-subplot1 = fig.add_subplot(1, 4, 1)
-subplot2 = fig.add_subplot(1, 4, 2)
-subplot3 = fig.add_subplot(1, 4, 3)
-subplot4 = fig.add_subplot(1, 4, 4)
+fig = plt.figure(1, figsize=(8, 8))  # figure definition (1x4 layout)
+subplot1 = fig.add_subplot(2, 2, 1)
+subplot2 = fig.add_subplot(2, 2, 2)
+subplot3 = fig.add_subplot(2, 2, 3)
+subplot4 = fig.add_subplot(2, 2, 4)
 plt.ion()  # Interactive mode activation
 
 #######################################################################################################################
@@ -248,8 +248,11 @@ if len(files) > 0:
             continue  # skip to the next file if not .tif or .nd2
 
         print("--------------------\nPROCESSSING [" + filename + "] FOR YEAZ SEGMENTATION\n--------------------\n")
+        # adjustment of channel and Z-slice number of Bright-field to start from 0
+        ch_BF=int(ch_BF)-1
+        z_BF=int(z_BF)-1
         # For each frame in image, do segmentation
-        for t in range(frame_start - 1, frame_end):
+        for t in range(frame_start-1, frame_end):
             print("--------------------\nProcessing frame ", t + 1)
             fig.suptitle("[" + filename + "] - frame " + str(t + 1))
             # ___________IMAGE PROCESSING -> SEGMENTATION________________
@@ -328,12 +331,11 @@ if len(files) > 0:
                                    size_z=1,
                                    size_t=Hyperstack_NT)
             print("   ...Successful")
-
+        
             # plt.show()  # shows the window for follow up of the segmentation process.
             # plt.draw()  # draw // refresh content
             # plt.pause(0.2)  # very important to leave some time for display to be effective
             print("\nFRAME #", t + 1, "of [" + filename + "] PROCESSED")
-            # HERE APPEND FRAMES TO FRAMES
         print("ALL DEFINED FRAMES OF [" + filename + "] PROCESSED")
         # HERE REOPEN THE Stack (with another tool?) and set bands/channels LUT/colors
 
