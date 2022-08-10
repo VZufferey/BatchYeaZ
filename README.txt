@@ -10,7 +10,7 @@ BatchYeaZ INSTALLATION
 # Open the console from within BatchYeaz location by typing "cmd" in the adress bar of the windows explorer
 # then enter the following commands:
 
-###### create an environment with the following command (these commands the conda variables was added to PATH, not explained here, already done)
+###### create an environment with the following command (these commands require conda to be installed and the conda variables were added to PATH, not explained here)
 $ conda create --name BatchYeaZ python=3.6.8
 # the  environement can be activated with: 
 $ conda activate BatchYeaZ
