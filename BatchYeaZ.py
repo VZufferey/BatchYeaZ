@@ -1,3 +1,4 @@
+# V1.2
 # In case you only want to use the functionalities of the convolutional neural network and the segmentation,
 # but not the full GUI, you only need the files in the same folder :
 # `unet/model.py`,
@@ -32,7 +33,7 @@ import bioformats
 # import of YeaZ modules (must be in the same folder as this script)
 from neural_network import *
 from segment import *
-# from hungarian import *
+from hungarian import *
 
 ################################################
 # FUNCTIONS
@@ -75,7 +76,7 @@ def checkInt(text):
         return 0
 ################################################
 
-# VARIABLE DEFINITION--> IDEALLY THROUGH USE INPUT THROUGH A SIMPLE GUI
+# VARIABLE DEFAULT DEFINITION--> IDEALLY THROUGH USE INPUT THROUGH A SIMPLE GUI
 Dir = Dir0 = "/no folder"
 ch_BF = 1  # Default Bright-field channel index
 z_BF = 1  # default Z slice where Bright-field is present (starts at 0)
@@ -86,7 +87,7 @@ TH_modifier = 1
 # unet_weights = filedialog.askopenfilename()    # (for development purpose) turn this line into comment and define default location with the line below
 # unet_weights = unet_weights_0 = r"C:\Users\vzuffer1\OneDrive - Université de Lausanne\PhD VZ (OneDrive)\0-MANIPS\0-IMAGING\0_python_scripts\Batch YeaZ segmenter\unet_weights_fission_BF_multilab_basic_SJR_0_1_batchsize_10_Nepochs_500.hdf5"
 
-## Working folder definition single pop up (leave as comment, FOR DEBUG)
+## Working folder definition single pop up (leave as comment, un-comment for debug)
 # Dir = filedialog.askDirectory()                              # request for a folder to work in
 # if not len(Dir):                                             # check a Directory was entered
 #         print("No file selected. interrupting script")
@@ -185,16 +186,21 @@ while True:
             window.close()
             break
 
-DirOut = str(Dir + "/seg")  # make output Directory
+# make output Directory if not existing
+DirOut = str(Dir + "/seg")
 if not os.path.exists(DirOut):
     os.makedirs(DirOut)
+
+# adjustment of channel and Z-slice number of Bright-field to start from 0
+ch_BF = int(ch_BF) - 1
+z_BF = int(z_BF) - 1
 
 # post initialisation variable summary
 print("Loaded neural network: ", unet_weights)
 print("Bright-field slice # : ", z_BF)
 print("Bright-field channel #: ", ch_BF)
 
-# initialisations for 1. Java virtual machine
+# initialisations for Java virtual machine
 JB.start_vm(class_path=bioformats.JARS)
 
 # this code comes from https://forum.image.sc/t/python-bioformats-and-javabridge-debug-messages/12578/12, and is used to remove log message during execution
@@ -204,11 +210,12 @@ rootLogger = JB.static_call("org/slf4j/LoggerFactory", "getLogger", "(Ljava/lang
 logLevel = JB.get_static_field("ch/qos/logback/classic/Level", myloglevel, "Lch/qos/logback/classic/Level;")
 JB.call(rootLogger, "setLevel", "(Lch/qos/logback/classic/Level;)V", logLevel)
 
-#initialisation for the image reader from python-bioformats (python-bioformats 1.5.2), used to obtain metadata of images
+#initialisation for the python-bioformats'  image reader (python-bioformats 1.5.2), used to obtain metadata of images
 image_reader = bioformats.formatreader.make_image_reader_class()()  # https://downloads.openmicroscopy.org/bio-formats/5.1.5/api/loci/formats/ImageReader.html
 
-# initialisations for image displays
+#initialisations for image displays
 fig = plt.figure(1, figsize=(8, 8))  # figure definition (1x4 layout)
+fig.canvas.manager.set_window_title('BatchYeaz')
 subplot1 = fig.add_subplot(2, 2, 1)
 subplot2 = fig.add_subplot(2, 2, 2)
 subplot3 = fig.add_subplot(2, 2, 3)
@@ -248,13 +255,11 @@ if len(files) > 0:
             continue  # skip to the next file if not .tif or .nd2
 
         print("--------------------\nPROCESSSING [" + filename + "] FOR YEAZ SEGMENTATION\n--------------------\n")
-        # adjustment of channel and Z-slice number of Bright-field to start from 0
-        ch_BF=int(ch_BF)-1
-        z_BF=int(z_BF)-1
         # For each frame in image, do segmentation
+        first = True
         for t in range(frame_start-1, frame_end):
-            print("--------------------\nProcessing frame ", t + 1)
-            fig.suptitle("[" + filename + "] - frame " + str(t + 1))
+            print("--------------------\nProcessing FRAME # ", t + 1)
+            fig.suptitle("[" + filename + "] - frame " + str(t + 1) + " of " + str(Hyperstack_NT) + "\nProcessing " + str(t+2-frame_start) + "/" + str(frame_end-frame_start+1))
             # ___________IMAGE PROCESSING -> SEGMENTATION________________
             # read single image within hyperstack with python bioformats
             im = bioformats.load_image(Dir + "/" + file, c=ch_BF, z=z_BF, t=t)
@@ -270,36 +275,46 @@ if len(files) > 0:
 
             # YeaZ Prediction image (CNN)
             pred = prediction(im_EQ, 1, pretrained_weights=unet_weights)
-            subplot2.set_title("predictions map")
+            subplot2.set_title("Predictions map")
             subplot2.imshow(pred, cmap='gray')
             plt.draw()  # draw // refresh content
             plt.pause(0.2)  # very important to leave some time for display to be effective
             print("Prediction image completed")
 
-            # Thresholding of prediction map: getting Th value with Otsu, and thersholding
-            th_value = filters.threshold_otsu(pred) * TH_modifier
-            print("Otsu thresholding value: ", th_value, "*", TH_modifier)
-            th_pred = pred > th_value
+            # Thresholding of prediction map: getting Th value with Otsu, and thresholding
+            th_value = filters.threshold_otsu(pred)
+            print("Otsu thresholding value: ", th_value, "*", TH_modifier, "=", th_value * TH_modifier)
+            th_pred = pred > (th_value * TH_modifier)
             subplot3.set_title("Thesholded predictions")
             subplot3.imshow(th_pred, cmap='gray')
             plt.draw()  # draw // refresh content
             plt.pause(0.2)  # very important to leave some time for display to be effective
             print("Thresholding of Prediction image completed")
 
-            # MAKE MASK SEQUENCE FROM THRESHOLDED PREDICTION :
+            # MAKE WATERSHED OF THRESHOLDED IMAGE AND TRACKING
             seg = segment(th_pred, pred, min_distance=10)
-            subplot4.set_title("Watershed")
-            subplot4.imshow(seg, cmap='gray')
+            #tracking between two frames is done using the `correspondence` function in `hungarian.py`.
+            if first:
+                print("First frame, no tracking")
+                first = False
+                trackedSeg = seg
+            else:
+                prevSeg = trackedSeg
+                print("Tracking using hungarian algorithm")
+                trackedSeg = correspondence(prevSeg, seg)
+
+            #trackedSeg = (trackedSeg * 256).astype("uint16")
+            subplot4.set_title("trackedSeg")
+            subplot4.imshow(trackedSeg, cmap='gray')
             plt.draw()  # draw // refresh content
             plt.pause(0.2)  # very important to leave some time for display to be effective
-            print("Watershed segmentation completed\n")
-            seg = (seg * 256).astype("uint16")
-            # print("asarray(seg).dtype", asarray(seg).dtype, "| numpy.amax(seg)", numpy.amax(seg))
+            print("Watershed segmentation and Tracking completed\n")
 
             ## ---------END OF PROCESSING---------
-            ## ---------Saving result images---------
 
-            # 1. COMPOSITE: copy input images/hyperstack and ADD a new channel in a newly created hyperstack.
+            ## ---------Results writing ---------
+
+            # # 1. COMPOSITE: copy input images/hyperstack and ADD a new channel in a newly created hyperstack.
             # un-comment to activate the function
             # print("\nOutput2: Writing output hyperstack & adding seg channel image for frame ", t)
             # for z in range(Hyperstack_NZ):                          #Copy hyperstack in new file
@@ -314,17 +329,17 @@ if len(files) > 0:
             #                                        size_t=Hyperstack_NT)
             #                 print("   ...Successful")
             # print("   Adding segmentation image in supplementary channel", Hyperstack_NC + 1, "and slice", z, "at T", t)
-            # bioformats.write_image(DirOut + "/" + filename + "_seg.tif", seg, bioformats.PT_UINT16,
+            # bioformats.write_image(DirOut + "/" + filename + "_seg.tif", trackedSeg, bioformats.PT_UINT16,
             #                        c=c+1, z=z_BF, t=t,
             #                        size_c=Hyperstack_NC + 1,
             #                        size_z=Hyperstack_NZ,
             #                        size_t=Hyperstack_NT)
             # print("   ...Successful") # still to solve: proper channel LUT (colors)
 
-            # 2. single sequence of mask images
+            # 2. SINGLE SEQUENCE // t-stack of mask images
             print("\nOutput1: Writing _maskSequence file (C=1, Z=1). Frame", t + 1, "of", Hyperstack_NT)
             bioformats.write_image(DirOut + "/" + filename + "_" + suffix + "_Th" + str(TH_modifier)+ "_T" + str(frame_start) + "-T" + str(frame_end) + ".tif",
-                                   seg,
+                                   trackedSeg,
                                    bioformats.PT_UINT16,
                                    c=0, z=0, t=t,
                                    size_c=1,
@@ -336,7 +351,7 @@ if len(files) > 0:
             # plt.draw()  # draw // refresh content
             # plt.pause(0.2)  # very important to leave some time for display to be effective
             print("\nFRAME #", t + 1, "of [" + filename + "] PROCESSED")
-        print("ALL DEFINED FRAMES OF [" + filename + "] PROCESSED")
+        print("ALL DEFINED FRAMES OF [" + filename + "] PROCESSED\n--------------------")
         # HERE REOPEN THE Stack (with another tool?) and set bands/channels LUT/colors
 
     print("\nALL FILES PROCESSED")
