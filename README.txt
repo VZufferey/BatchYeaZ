@@ -6,7 +6,7 @@ PRELIMINARY INSTALLATION: Conda -> Python
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 BatchYeaZ INSTALLATION
-# Dependency on YeaZ: Get model.py, neural_network.py and segment.py from YeaZ's Github (https://github.com/lpbsscientist/YeaZ-GUI) and place them in the BatchYeaZ folder 
+# Dependency on YeaZ: Get model.py, neural_network.py, segment.py and Hungarian.py from YeaZ's Github (https://github.com/lpbsscientist/YeaZ-GUI) and place them in the BatchYeaZ folder 
 # Open the console from within BatchYeaz location by typing "cmd" in the adress bar of the windows explorer
 # then enter the following commands:
 
