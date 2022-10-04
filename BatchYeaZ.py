@@ -241,9 +241,10 @@ if len(files) > 0:
 
                 if isinstance(frame_end, int): # if last frame value is a number, ...
                     if frame_end > Hyperstack_NT: # and if last frame value is bigger than the sequence length, ..
-                        frame_end = Hyperstack_NT # adjust to last frame number
+                        frame_end2 = Hyperstack_NT # adjust to last frame number
                 elif isinstance(frame_end, str): # else, if last frame value is not a number,...
-                    frame_end = int(Hyperstack_NT) # then set to int with the last frame number.
+                    frame_end2 = int(Hyperstack_NT) # then set to int with the last sframe number.
+                else: frame_end2 = frame_end
 
                 print("N channels: ", Hyperstack_NC, " // N frames: ", Hyperstack_NT, " // N slices: ", Hyperstack_NZ)
                 print("Bright-field is expected on channel ", ch_BF)
@@ -257,9 +258,9 @@ if len(files) > 0:
         print("--------------------\nPROCESSSING [" + filename + "] FOR YEAZ SEGMENTATION\n--------------------\n")
         # For each frame in image, do segmentation
         first = True
-        for t in range(frame_start-1, frame_end):
+        for t in range(frame_start-1, frame_end2):
             print("--------------------\nProcessing FRAME # ", t + 1)
-            fig.suptitle("[" + filename + "] - frame " + str(t + 1) + " of " + str(Hyperstack_NT) + "\nProcessing " + str(t+2-frame_start) + "/" + str(frame_end-frame_start+1))
+            fig.suptitle("[" + filename + "] - frame " + str(t + 1) + " of " + str(Hyperstack_NT) + "\nProcessing " + str(t+2-frame_start) + "/" + str(frame_end2-frame_start+1))
             # ___________IMAGE PROCESSING -> SEGMENTATION________________
             # read single image within hyperstack with python bioformats
             im = bioformats.load_image(Dir + "/" + file, c=ch_BF, z=z_BF, t=t)
@@ -295,12 +296,10 @@ if len(files) > 0:
             seg = segment(th_pred, pred, min_distance=10)
             #tracking between two frames is done using the `correspondence` function in `hungarian.py`.
             if first:
-                print("First frame, no tracking")
                 first = False
                 trackedSeg = seg
             else:
                 prevSeg = trackedSeg
-                print("Tracking using hungarian algorithm")
                 trackedSeg = correspondence(prevSeg, seg)
 
             #trackedSeg = (trackedSeg * 256).astype("uint16")
@@ -308,7 +307,7 @@ if len(files) > 0:
             subplot4.imshow(trackedSeg, cmap='gray')
             plt.draw()  # draw // refresh content
             plt.pause(0.2)  # very important to leave some time for display to be effective
-            print("Watershed segmentation and Tracking completed\n")
+            print("Watershed and Tracking completed\n")
 
             ## ---------END OF PROCESSING---------
 
@@ -338,7 +337,7 @@ if len(files) > 0:
 
             # 2. SINGLE SEQUENCE // t-stack of mask images
             print("\nOutput1: Writing _maskSequence file (C=1, Z=1). Frame", t + 1, "of", Hyperstack_NT)
-            bioformats.write_image(DirOut + "/" + filename + "_" + suffix + "_Th" + str(TH_modifier)+ "_T" + str(frame_start) + "-T" + str(frame_end) + ".tif",
+            bioformats.write_image(DirOut + "/" + filename + "_" + suffix + "_Th" + str(TH_modifier)+ "_T" + str(frame_start) + "-T" + str(frame_end2) + ".tif",
                                    trackedSeg,
                                    bioformats.PT_UINT16,
                                    c=0, z=0, t=t,
