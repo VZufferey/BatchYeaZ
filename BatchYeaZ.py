@@ -339,7 +339,7 @@ if len(files) > 0:
             print("\nOutput1: Writing _maskSequence file (C=1, Z=1). Frame", t + 1, "of", Hyperstack_NT)
             bioformats.write_image(DirOut + "/" + filename + "_" + suffix + "_Th" + str(TH_modifier)+ "_T" + str(frame_start) + "-T" + str(frame_end2) + ".tif",
                                    trackedSeg,
-                                   bioformats.PT_UINT16,
+                                   bioformats.PT_UINT8,
                                    c=0, z=0, t=t,
                                    size_c=1,
                                    size_z=1,
