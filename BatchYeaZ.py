@@ -84,6 +84,7 @@ frame_start = 1
 frame_end = "last"
 suffix = "seg"
 TH_modifier = 1
+unet_weights = os.path.join(sys.path[0], "unet_weights_fission_BF_multilab_basic_SJR_0_1_batchsize_10_Nepochs_500.hdf5")
 # unet_weights = filedialog.askopenfilename()    # (for development purpose) turn this line into comment and define default location with the line below
 # unet_weights = unet_weights_0 = r"C:\Users\vzuffer1\OneDrive - Université de Lausanne\PhD VZ (OneDrive)\0-MANIPS\0-IMAGING\0_python_scripts\Batch YeaZ segmenter\unet_weights_fission_BF_multilab_basic_SJR_0_1_batchsize_10_Nepochs_500.hdf5"
 
@@ -294,6 +295,7 @@ if len(files) > 0:
 
             # MAKE WATERSHED OF THRESHOLDED IMAGE AND TRACKING
             seg = segment(th_pred, pred, min_distance=10)
+
             #tracking between two frames is done using the `correspondence` function in `hungarian.py`.
             if first:
                 first = False
@@ -345,7 +347,7 @@ if len(files) > 0:
                                    size_z=1,
                                    size_t=Hyperstack_NT)
             print("   ...Successful")
-        
+
             # plt.show()  # shows the window for follow up of the segmentation process.
             # plt.draw()  # draw // refresh content
             # plt.pause(0.2)  # very important to leave some time for display to be effective
